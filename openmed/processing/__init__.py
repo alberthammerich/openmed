@@ -8,7 +8,10 @@ from .batch import (
     BatchItem,
     BatchItemResult,
     BatchResult,
+    DatasetRedactionResult,
+    DatasetRedactionSummary,
     process_batch,
+    redact_dataset,
 )
 from . import sentences
 
@@ -24,6 +27,9 @@ __all__ = [
     "BatchItem",
     "BatchItemResult",
     "BatchResult",
+    "DatasetRedactionResult",
+    "DatasetRedactionSummary",
     "process_batch",
+    "redact_dataset",
     "sentences",
 ]

@@ -29,7 +29,10 @@ from .processing import (
     BatchItem,
     BatchItemResult,
     BatchResult,
+    DatasetRedactionResult,
+    DatasetRedactionSummary,
     process_batch,
+    redact_dataset,
 )
 from .processing import sentences as sentence_utils
 from .processing.advanced_ner import AdvancedNERProcessor, create_advanced_processor
@@ -537,7 +540,10 @@ __all__ = [
     "BatchItem",
     "BatchItemResult",
     "BatchResult",
+    "DatasetRedactionResult",
+    "DatasetRedactionSummary",
     "process_batch",
+    "redact_dataset",
     "AdvancedNERProcessor",
     "create_advanced_processor",
     "PredictionResult",

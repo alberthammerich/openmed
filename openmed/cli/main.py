@@ -113,6 +113,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     _add_analyze_command(subparsers)
     _add_batch_command(subparsers)
+    _add_redact_dataset_command(subparsers)
     _add_pii_command(subparsers)
     _add_tui_command(subparsers)
     _add_models_command(subparsers)
@@ -260,6 +261,87 @@ def _add_batch_command(subparsers: argparse._SubParsersAction) -> None:
         help="Suppress progress output.",
     )
     batch_parser.set_defaults(handler=_handle_batch)
+
+
+def _add_redact_dataset_command(subparsers: argparse._SubParsersAction) -> None:
+    redact_parser = subparsers.add_parser(
+        "redact-dataset",
+        help="Redact selected free-text columns in a CSV, JSONL, or Parquet dataset.",
+    )
+    redact_parser.add_argument(
+        "path",
+        type=Path,
+        help="Input .csv, .jsonl, .ndjson, or .parquet file.",
+    )
+    redact_parser.add_argument(
+        "--text-column",
+        dest="text_column",
+        action="append",
+        default=[],
+        help="Free-text column to redact. Repeat for multiple columns.",
+    )
+    redact_parser.add_argument(
+        "--text-columns",
+        dest="text_columns",
+        default=None,
+        help="Comma-separated free-text columns to redact.",
+    )
+    redact_parser.add_argument(
+        "--output",
+        "-o",
+        type=Path,
+        help="Output dataset path. Defaults to <stem>.redacted<suffix>.",
+    )
+    redact_parser.add_argument(
+        "--policy",
+        default=None,
+        help="Policy profile name to pass to de-identification.",
+    )
+    redact_parser.add_argument(
+        "--method",
+        choices=["mask", "remove", "replace", "hash", "shift_dates"],
+        default="mask",
+        help="Fallback de-identification method.",
+    )
+    redact_parser.add_argument(
+        "--model",
+        default="OpenMed/OpenMed-PII-SuperClinical-Small-44M-v1",
+        help="PII detection model.",
+    )
+    redact_parser.add_argument(
+        "--confidence-threshold",
+        type=float,
+        default=0.7,
+        help="Minimum confidence for redaction.",
+    )
+    redact_parser.add_argument(
+        "--lang",
+        default="en",
+        help="Language hint for PII detection and redaction.",
+    )
+    redact_parser.add_argument(
+        "--encoding",
+        default="utf-8",
+        help="Text encoding for CSV and JSONL inputs.",
+    )
+    redact_parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=512,
+        help="Row batch size for Parquet processing.",
+    )
+    redact_parser.add_argument(
+        "--keep-year",
+        action="store_true",
+        default=True,
+        help="Keep year in dates where applicable.",
+    )
+    redact_parser.add_argument(
+        "--no-safety-sweep",
+        action="store_true",
+        help="Disable deterministic structured-identifier sweep.",
+    )
+    redact_parser.set_defaults(handler=_handle_redact_dataset)
 
 
 def _add_pii_command(subparsers: argparse._SubParsersAction) -> None:
@@ -696,6 +778,13 @@ def _handle_batch(args: argparse.Namespace) -> int:
         sys.stdout.write(f"{output}\n")
 
     return 0 if result.failed_items == 0 else 1
+
+
+def _handle_redact_dataset(args: argparse.Namespace) -> int:
+    from .redact_dataset import run_from_args
+
+    config = _load_and_apply_config(args)
+    return run_from_args(args, config=config)
 
 
 def _handle_tui(args: argparse.Namespace) -> int:
