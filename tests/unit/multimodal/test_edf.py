@@ -3,11 +3,39 @@
 import io
 import json
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
 from openmed.multimodal.edf import EDF_NOTICE, EdfError, EdfLimits, read_edf
 from tests.fixtures.multimodal.edf import replace_field, synthetic_edf
+
+
+def test_signal_kind_counts_match_shared_fixture():
+    fixture = json.loads(
+        (
+            Path(__file__).resolve().parents[3]
+            / "tests/fixtures/parity/edf_signal_kinds_v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert fixture["version"] == 1
+    for kind, labels in fixture["groups"].items():
+        expected = dict.fromkeys(fixture["groups"], 0)
+        expected[kind] += 1
+        expected["EMG"] += 1
+        for label in labels:
+            result = read_edf(
+                synthetic_edf(
+                    kind="EDF+C", label=label, other_samples=((-2, 2), (0, 1))
+                ),
+                start_seconds=0.5,
+                end_seconds=1.5,
+            )
+            report = result.report()
+            assert report["signal_kinds"] == expected, label
+            assert sum(report["signal_kinds"].values()) == report["signal_count"] == 2
+            if kind == "withheld" and label not in fixture["groups"]:
+                assert label not in json.dumps(report)
 
 
 @pytest.mark.parametrize("kind", ["EDF", "EDF+C", "EDF+D"])
@@ -319,6 +347,15 @@ def test_annotation_only_zero_duration_and_default_event_selection():
     )
     result = read_edf(source)
     assert result.signals == ()
+    assert result.report()["signal_kinds"] == {
+        "ECG": 0,
+        "EEG": 0,
+        "EOG": 0,
+        "EMG": 0,
+        "SpO2": 0,
+        "temperature": 0,
+        "withheld": 0,
+    }
     assert result.window_end_seconds == 4
     assert result.report()["annotation_count"] == 4
     source = synthetic_edf(kind="EDF+C")

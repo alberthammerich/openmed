@@ -99,6 +99,16 @@ Reports contain controlled counts/statuses and the notice, omitting samples,
 labels, absolute dates and annotation text. Error messages contain only reason
 codes; underlying stream messages and Python exception chains are withheld.
 
+Both reports include `signal_kinds`, a mapping with all seven count keys:
+`ECG`, `EEG`, `EOG`, `EMG`, `SpO2`, `temperature` and `withheld`, including zeros.
+Counts use only the controlled labels: ECG leads count as `ECG`, EEG derivations
+as `EEG`, `SaO2` and `SpO2` as `SpO2`, and `Temp rectal` and `Body temp` as
+`temperature`. Uncontrolled labels count only as `withheld`, even if they start
+with a recognized kind. Counts describe all ordinary signal headers, independent
+of the selected sample window; annotation channels are excluded. They sum to
+`signal_count`, and annotation-only files report zeros. No samples are inspected
+to infer channel kind, and the counts do not establish clinical validity.
+
 ## Bounds and streams
 
 Default budgets are 64 MiB input, 64 signals, 100,000 records, 1 MiB per record,

@@ -59,6 +59,32 @@ final class EDFReaderTests: XCTestCase {
         }
     }
 
+    func testSignalKindCountsMatchSharedFixture() throws {
+        var root = URL(fileURLWithPath: #filePath)
+        for _ in 0..<5 { root.deleteLastPathComponent() }
+        let data = try Data(contentsOf: root.appending(path: "tests/fixtures/parity/edf_signal_kinds_v1.json"))
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(try XCTUnwrap(fixture["version"] as? Int), 1)
+        let groups = try XCTUnwrap(fixture["groups"] as? [String: [String]])
+        for (kind, labels) in groups {
+            var expected = groups.mapValues { _ in 0 }
+            expected[kind, default: 0] += 1
+            expected["EMG", default: 0] += 1
+            for label in labels {
+                let result = try EDFReader.read(synthetic(kind: "EDF+C", label: label, other: true), startSeconds: 0.5, endSeconds: 1.5)
+                let report = result.report()
+                let counts = try XCTUnwrap(report["signal_kinds"] as? [String: Int])
+                XCTAssertEqual(counts, expected, label)
+                XCTAssertEqual(counts.values.reduce(0, +), 2)
+                XCTAssertEqual(report["signal_count"] as? Int, 2)
+                if kind == "withheld" && groups[label] == nil {
+                    let json = try JSONSerialization.data(withJSONObject: report)
+                    XCTAssertFalse(try XCTUnwrap(String(data: json, encoding: .utf8)).contains(label))
+                }
+            }
+        }
+    }
+
     func testFormatsScaledSamplesAndReviewGate() throws {
         for kind in ["EDF", "EDF+C", "EDF+D"] {
             let result = try EDFReader.read(synthetic(kind: kind))
@@ -210,6 +236,7 @@ final class EDFReaderTests: XCTestCase {
         XCTAssertEqual(mixed.records[1].signals[1].physicalSamples, [0])
         let annotations = try EDFReader.read(synthetic(kind: "EDF+D", onsets: ["+0", "+3"], duration: "0", annotationOnly: true))
         XCTAssertTrue(annotations.signals.isEmpty)
+        XCTAssertEqual(annotations.report()["signal_kinds"] as? [String: Int], ["ECG": 0, "EEG": 0, "EOG": 0, "EMG": 0, "SpO2": 0, "temperature": 0, "withheld": 0])
         XCTAssertEqual(annotations.windowEndSeconds, 4)
         XCTAssertEqual(annotations.report()["annotation_count"] as? Int, 4)
     }

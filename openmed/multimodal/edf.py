@@ -154,9 +154,27 @@ class EdfRecording:
 
     def report(self) -> dict[str, object]:
         """Return codes/counts only; omit samples, labels and source headers."""
+        signal_kinds = dict.fromkeys(
+            ("ECG", "EEG", "EOG", "EMG", "SpO2", "temperature", "withheld"), 0
+        )
+        for signal in self.signals:
+            if signal.label not in _LABELS:
+                kind = "withheld"
+            elif signal.label.startswith("ECG"):
+                kind = "ECG"
+            elif signal.label.startswith("EEG"):
+                kind = "EEG"
+            elif signal.label in ("SaO2", "SpO2"):
+                kind = "SpO2"
+            elif signal.label in ("Temp rectal", "Body temp"):
+                kind = "temperature"
+            else:
+                kind = signal.label
+            signal_kinds[kind] += 1
         return {
             "format": self.format,
             "signal_count": len(self.signals),
+            "signal_kinds": signal_kinds,
             "record_count": self.record_count,
             "window_record_count": len(self.records),
             "annotation_count": sum(a.count for a in self.annotations),

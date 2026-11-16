@@ -99,8 +99,27 @@ public struct EDFRecording: Sendable {
 
     /// Report controlled counts and statuses, omitting headers, samples and labels.
     public func report() -> [String: Any] {
-        [
+        var signalKinds = ["ECG": 0, "EEG": 0, "EOG": 0, "EMG": 0, "SpO2": 0, "temperature": 0, "withheld": 0]
+        for signal in signals {
+            let kind: String
+            if !EDFReader.labels.contains(signal.label) {
+                kind = "withheld"
+            } else if signal.label.hasPrefix("ECG") {
+                kind = "ECG"
+            } else if signal.label.hasPrefix("EEG") {
+                kind = "EEG"
+            } else if ["SaO2", "SpO2"].contains(signal.label) {
+                kind = "SpO2"
+            } else if ["Temp rectal", "Body temp"].contains(signal.label) {
+                kind = "temperature"
+            } else {
+                kind = signal.label
+            }
+            signalKinds[kind, default: 0] += 1
+        }
+        return [
             "format": format, "signal_count": signals.count, "record_count": recordCount,
+            "signal_kinds": signalKinds,
             "window_record_count": records.count,
             "annotation_count": annotations.reduce(0) { $0 + $1.count },
             "gap_count": gaps.count,
@@ -113,7 +132,7 @@ public struct EDFRecording: Sendable {
 
 /// Dependency-free on-device EDF/EDF+ parsing. Performs no diagnosis, network or file writes.
 public enum EDFReader {
-    private static let labels: Set<String> = Set(
+    fileprivate static let labels: Set<String> = Set(
         ["ECG", "EEG", "EMG", "EOG", "Temp rectal", "Body temp", "SaO2", "SpO2", "EEG Fpz-Cz", "EEG Pz-Oz"]
             + ["I", "II", "III", "aVR", "aVL", "aVF", "V1", "V2", "V3", "V4", "V5", "V6"].map { "ECG \($0)" }
     )

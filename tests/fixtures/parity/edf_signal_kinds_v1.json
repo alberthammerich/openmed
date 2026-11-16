@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "groups": {
+    "ECG": ["ECG", "ECG I", "ECG II", "ECG III", "ECG aVR", "ECG aVL", "ECG aVF", "ECG V1", "ECG V2", "ECG V3", "ECG V4", "ECG V5", "ECG V6"],
+    "EEG": ["EEG", "EEG Fpz-Cz", "EEG Pz-Oz"],
+    "EOG": ["EOG"],
+    "EMG": ["EMG"],
+    "SpO2": ["SpO2", "SaO2"],
+    "temperature": ["Temp rectal", "Body temp"],
+    "withheld": ["SYNTHETIC_SECRET", "ECG PRIVATE", "EEG PRIVATE", "EMG PRIVATE", "SpO2 PRIVATE", "temperature", "withheld"]
+  }
+}
