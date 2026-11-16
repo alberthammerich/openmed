@@ -109,6 +109,30 @@ def test_i18n_fixture_directory_is_non_empty():
     assert not missing, f"missing OM-100 language fixtures: {sorted(missing)}"
 
 
+@pytest.mark.parametrize("language", ["id", "th", "vi"])
+def test_southeast_asian_i18n_fixtures_have_three_to_five_masked_notes(language):
+    rows = _load_rows(_I18N_DIR / f"{language}.jsonl")
+    assert 3 <= len(rows) <= 5
+    for row in rows:
+        masked = row["text"]
+        for span in sorted(row["gold_spans"], key=lambda s: s["start"], reverse=True):
+            masked = (
+                masked[: span["start"]] + f"[{span['label']}]" + masked[span["end"] :]
+            )
+        assert row["metadata"]["expected_output"] == {"method": "mask", "text": masked}
+
+
+def test_thai_i18n_fixture_covers_an_id_between_unspaced_thai_words():
+    assert any(
+        span["label"] == "ID_NUM"
+        and 0 < span["start"] < span["end"] < len(row["text"])
+        and "\u0e00" <= row["text"][span["start"] - 1] <= "\u0e7f"
+        and "\u0e00" <= row["text"][span["end"]] <= "\u0e7f"
+        for row in _load_rows(_I18N_DIR / "th.jsonl")
+        for span in row["gold_spans"]
+    )
+
+
 @pytest.mark.parametrize(
     "path",
     [path for path in _fixture_paths() if path.stem in _OM_100_LANGUAGES],

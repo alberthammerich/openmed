@@ -3370,7 +3370,7 @@ class TestLanguagePIIPatterns:
             Path(__file__).resolve().parents[2]
             / "openmed/eval/golden/fixtures/i18n/th.jsonl"
         )
-        fixture = json.loads(fixture_path.read_text(encoding="utf-8").strip())
+        fixture = json.loads(fixture_path.read_text(encoding="utf-8").splitlines()[0])
         text = fixture["text"]
 
         expected = {
@@ -4005,7 +4005,7 @@ class TestIndonesianLocaleAndFixture:
             if line.strip()
         ]
 
-        assert len(rows) == 1
+        assert len(rows) == 3
         row = rows[0]
         assert row["language"] == "id"
         assert row["metadata"]["synthetic"] is True
@@ -4208,7 +4208,7 @@ class TestVietnameseLanguagePack:
             for line in fixture_path.read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
-        assert len(rows) == 2
+        assert len(rows) == 3
 
         label_map = {
             "DATE": "date",
@@ -4278,7 +4278,7 @@ class TestVietnameseLanguagePack:
             for line in fixture_path.read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
-        assert len(fixtures) == 2
+        assert len(fixtures) == 3
         assert {fixture.language for fixture in fixtures} == {"vi"}
 
         for fixture in fixtures:
